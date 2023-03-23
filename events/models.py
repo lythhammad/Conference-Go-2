@@ -11,6 +11,7 @@ class State(models.Model):
     direct URL to view it.
     """
 
+    id = models.PositiveIntegerField(primary_key=True)
     name = models.CharField(max_length=20)
     abbreviation = models.CharField(max_length=2)
 
@@ -32,7 +33,7 @@ class Location(models.Model):
     room_count = models.PositiveSmallIntegerField()
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-
+    picture_url = models.URLField(null=True)
     state = models.ForeignKey(
         State,
         related_name="+",  # do not create a related name on State

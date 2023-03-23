@@ -11,6 +11,7 @@ class Status(models.Model):
     direct URL to view it.
     """
 
+    id = models.PositiveSmallIntegerField(primary_key=True)
     name = models.CharField(max_length=10)
 
     def __str__(self):
@@ -46,6 +47,23 @@ class Presentation(models.Model):
         related_name="presentations",
         on_delete=models.CASCADE,
     )
+
+    @classmethod
+    def create(cls, **kwargs):
+        kwargs["status"] = Status.objects.get(name="SUBMITTED")
+        presentation = cls(**kwargs)
+        presentation.save()
+        return presentation
+
+    def approve(self):
+        status = Status.objects.get(name="APPROVED")
+        self.status = status
+        self.save()
+
+    def reject(self):
+        status = Status.objects.get(name="REJECTED")
+        self.status = status
+        self.save()
 
     def get_api_url(self):
         return reverse("api_show_presentation", kwargs={"id": self.id})

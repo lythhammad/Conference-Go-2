@@ -1,8 +1,12 @@
 from django.http import JsonResponse
-
 from .models import Attendee
+from .encoders import AttendeeDetailEncoder, AttendeeListEncoder
+from django.views.decorators.http import require_http_methods
+import json
+from events.models import Conference
 
 
+@require_http_methods(["GET", "POST"])
 def api_list_attendees(request, conference_id):
     """
     Lists the attendees names and the link to the attendee
@@ -23,13 +27,35 @@ def api_list_attendees(request, conference_id):
         ]
     }
     """
-    return JsonResponse({})
+    if request.method == "GET":
+        attendees = Attendee.objects.filter(conference=conference_id)
+        return JsonResponse(
+            {"attendees": attendees},
+            encoder=AttendeeListEncoder,
+        )
+    else:
+        content = json.loads(request.body)
+        try:
+            conference = Conference.objects.get(id=conference_id)
+            content["conference"] = conference
+        except Conference.DoesNotExist:
+            return JsonResponse(
+                {"message": "Invalid conference id"},
+                status=400,
+            )
+
+        attendee = Attendee.objects.create(**content)
+        return JsonResponse(
+            attendee,
+            encoder=AttendeeDetailEncoder,
+            safe=False,
+        )
 
 
 def api_show_attendee(request, id):
     """
     Returns the details for the Attendee model specified
-    by the id parameter.
+    by the pk parameter.
 
     This should return a dictionary with email, name,
     company name, created, and conference properties for
@@ -46,4 +72,43 @@ def api_show_attendee(request, id):
         }
     }
     """
-    return JsonResponse({})
+    try:
+        attendee = Attendee.objects.get(id=id)
+    except Attendee.DoesNotExist:
+        return JsonResponse(
+            {"message": "Invalid attendee id"},
+            status=404,
+        )
+
+    if request.method == "GET":
+        return JsonResponse(
+            attendee,
+            encoder=AttendeeDetailEncoder,
+            safe=False,
+        )
+
+    elif request.method == "DELETE":
+        count, _ = Attendee.objects.filter(id=id).delete()
+        return JsonResponse({"deleted": count > 0})
+
+    else:
+        content = json.loads(request.body)
+
+        try:
+            if "conference" in content:
+                conference = Conference.objects.get(id=content["conference"])
+                content["conference"] = conference
+        except Conference.DoesNotExist:
+            return JsonResponse(
+                {"message": "Invalid conference id"},
+                status=404,
+            )
+
+        Attendee.objects.filter(id=id).update(**content)
+
+        attendee = Attendee.objects.get(id=id)
+        return JsonResponse(
+            attendee,
+            encoder=AttendeeDetailEncoder,
+            safe=False,
+        )
