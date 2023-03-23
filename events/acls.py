@@ -13,4 +13,7 @@ def get_photo(city, state):
     return data["photos"][0]["src"]["original"]
 
 
-# def get_wether_data(city, state):
+def get_wether_data(city, state):
+    url = f"http://api.openweathermap.org/geo/1.0/direct?q={city}+{state}"
+    response = requests.get(url)
+    date = response.json()

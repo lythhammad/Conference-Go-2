@@ -123,6 +123,7 @@ def api_show_conference(request, id):
             encoder=ConferenceDetailEncoder,
             safe=False,
         )
+    # hut il code hana
 
 
 @require_http_methods(["GET", "POST"])
