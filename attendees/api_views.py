@@ -52,6 +52,7 @@ def api_list_attendees(request, conference_id):
         )
 
 
+@require_http_methods(["DELETE", "GET", "PUT"])
 def api_show_attendee(request, id):
     """
     Returns the details for the Attendee model specified
@@ -106,7 +107,6 @@ def api_show_attendee(request, id):
 
         Attendee.objects.filter(id=id).update(**content)
 
-        attendee = Attendee.objects.get(id=id)
         return JsonResponse(
             attendee,
             encoder=AttendeeDetailEncoder,

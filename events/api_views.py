@@ -8,8 +8,8 @@ from .encoders import (
 )
 from django.views.decorators.http import require_http_methods
 import json
-from .models import State
-from .acls import get_photo
+from .models import State, Location, Conference
+from .acls import get_photo, get_weather_data
 
 
 @require_http_methods(["GET", "POST"])
@@ -118,12 +118,15 @@ def api_show_conference(request, id):
         Conference.objects.filter(id=id).update(**content)
 
         conference = Conference.objects.get(id=id)
-        return JsonResponse(
-            conference,
-            encoder=ConferenceDetailEncoder,
-            safe=False,
-        )
-    # hut il code hana
+    weather = get_weather_data(
+        conference.location.city,
+        conference.location.state.abbreviation,
+    )
+    return JsonResponse(
+        {"conference": conference, "weather": weather},
+        encoder=ConferenceDetailEncoder,
+        safe=False,
+    )
 
 
 @require_http_methods(["GET", "POST"])
@@ -163,8 +166,8 @@ def api_list_locations(request):
                 status=400,
             )
 
-        content["picture_url"] = get_photo(content["city"], content["state"])
-
+        photo = get_photo(content["city"], content["state"].abbreviation)
+        content.update(photo)
         location = Location.objects.create(**content)
         return JsonResponse(
             location,
